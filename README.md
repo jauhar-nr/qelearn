@@ -1,4 +1,4 @@
-# ⚛️ QELearn 
+# QELearn 
 
 **An intuitive and interactive way to learn and generate Quantum ESPRESSO input files directly from your terminal!**
 
