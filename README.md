@@ -39,4 +39,4 @@ Once installed, simply open your terminal, navigate to the folder where you want
 qelearn
 ```
 
-Happy computing! 💻✨
+Happy computing!
