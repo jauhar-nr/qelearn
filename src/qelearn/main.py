@@ -20,11 +20,11 @@ Welcome! Choose a calculation workflow to begin:
 """
 
 LEARNING_DATA = {
-    "getting_started": "### Getting Started\n\nWelcome to Quantum ESPRESSO!\n\n**What is QE?**\nAn open-source suite for electronic-structure calculations and materials modeling based on Density-Functional Theory (DFT).\n\n**Recommended File Structure:**\nTo keep your projects organized, we strongly recommend grouping files by calculation step inside your material folder:\n\n```text\nsilicon/\n ├── bands/  (Band structure)\n ├── dos/    (Density of states)\n ├── pseudo/ (Store .UPF files here)\n ├── relax/  (Optimize structure)\n └── scf/    (Ground state)\n```\n*This ensures your `pseudo_dir` can elegantly point to `../pseudo/` from any calculation subfolder!*",
-    "band": "### Band Structure\n\nMaps out the allowed 'highways' for electrons to travel across your crystal.\n\nRequires an initial SCF run to converge the charge density, followed by a non-self-consistent ('bands') calculation along a specific high-symmetry K-path in the Brillouin zone.\n\n**Generated Files:**\n- `scf.in` (pw.x)\n- `nscfbands.in` (pw.x)\n- `bands.in` (bands.x)",
-    "dos": "### Density of States (DOS)\n\nCounts how many parking spots are available for electrons at every energy level.\n\nRequires an SCF run to converge the charge density, followed by an NSCF run using a very dense, uniform K-point mesh to accurately integrate the electronic states.\n\n**Generated Files:**\n- `scf.in` (pw.x)\n- `nscf.in` (pw.x)\n- `dos.in` (dos.x)",
+    "getting_started": "### Getting Started\n\nWelcome to Quantum ESPRESSO & QELearn!\n\n**Topics covered inside:**\n- **Overview:** What is Quantum ESPRESSO & QELearn?\n- **Workflows:** Input requirements for Band, DOS, SCF & Relax\n- **Organization:** How to organize your project files neatly\n- **Execution:** Running `pw.x` in serial and parallel (MPI)\n- **Shortcuts:** Useful keyboard navigation tips\n\n**Press `[Enter]` to open the full Getting Started page!**",
+    "band": "### Band Structure\n\nMaps out the allowed 'highways' for electrons to travel across your crystal.\n\nRequires an initial SCF run to converge the ground-state charge density, followed by a non-self-consistent ('bands') calculation along high-symmetry K-paths in the Brillouin zone.\n\n**Generated Files:**\n- `scf.in` (pw.x)\n- `nscfbands.in` (pw.x with nbnd & nosym)\n- `bands.in` (bands.x)",
+    "dos": "### Density of States (DOS)\n\nCounts how many electronic energy levels are available at every energy.\n\nRequires an SCF run to converge the charge density, followed by an NSCF run using a dense K-point mesh (strictly 2D mesh for monolayers) to integrate the density of states.\n\n**Generated Files:**\n- `scf.in` (pw.x)\n- `nscf.in` (pw.x with nbnd)\n- `dos.in` (dos.x)",
     "scf": "### Self-Consistent Field (SCF)\n\nThe foundation of all DFT calculations. Finds the absolute ground-state of your material.\n\nIteratively solves the Kohn-Sham equations until the input and output electron densities match (self-consistency), giving you the total energy and converged charge density.\n\n**Generated Files:**\n- `scf.in`",
-    "relax": "### Geometry Optimization\n\nShakes the atoms until they settle into their most comfortable, stable positions.\n\nMinimizes the total energy by moving atoms along the calculated Hellmann-Feynman force gradients until the system reaches a local or global minimum.\n\n- `relax` : Optimizes only atomic positions inside a fixed box.\n- `vc-relax` : Optimizes both atomic positions and the box volume/shape.\n\n**Generated Files:**\n- `relax.in` (or `vc-relax.in`)"
+    "relax": "### Geometry Optimization\n\nOptimizes atomic positions and unit cell parameters to minimize Hellmann-Feynman forces and stresses.\n\n- `relax` : Optimizes only atomic positions inside a fixed box.\n- `vc-relax` : Optimizes both atomic positions and cell volume/shape (automatically uses `cell_dofree = '2Dxy'` for 2D materials to prevent vacuum collapse).\n\n**Generated Files:**\n- `relax.in` (or `vc-relax.in`)"
 }
 
 class QuitScreen(ModalScreen):
@@ -214,10 +214,11 @@ class QELearnApp(App):
                 self.query_one("#learn-content", Static).update(Markdown(LEARNING_DATA[option_id]))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        """Navigate to the Wizard screen when a workflow is chosen."""
+        """Navigate to the Wizard screen or Getting Started guide."""
         if event.option_list.id == "workflow-menu":
             if event.option.id == "getting_started":
-                self.notify("Please select a workflow (e.g. SCF) from below to begin your calculation.", title="Getting Started")
+                from qelearn.ui.getting_started import GettingStartedScreen
+                self.push_screen(GettingStartedScreen())
             else:
                 self.app.workflow = event.option.id
                 from qelearn.ui.wizard import ElectronicNatureScreen

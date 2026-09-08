@@ -6,18 +6,18 @@ from textual.widgets.option_list import Option
 from rich.markdown import Markdown
 
 ELECTRONIC_LEARN = {
-    "nonmag_insulator": "### Insulator / Semiconductor\n\nStandard non-magnetic systems with a clear band gap.\n\n*No special electronic parameters injected.*",
-    "nonmag_metal": "### Metal\n\nMetallic systems have zero band gap. To achieve SCF convergence, fractional electron occupancies at the Fermi level are required.\n\n*Parameters Injected:*\n- `occupations = 'smearing'`\n- `smearing = 'mv'` (Marzari-Vanderbilt)\n- `degauss = 0.02`",
-    "mag_insulator": "### Magnetic Insulator\n\nMagnetic systems with a band gap (e.g., NiO, antiferromagnets). Requires spin-polarized calculations.\n\n*Parameters Injected:*\n- `nspin = 2`\n- `starting_magnetization(1) = 0.5`",
-    "mag_metal": "### Magnetic Metal\n\nFerromagnetic or magnetic metallic systems (e.g., Fe, Ni, Co). Requires both smearing and spin-polarization.\n\n*Parameters Injected:*\n- `occupations = 'smearing'`\n- `smearing = 'mv'`\n- `degauss = 0.02`\n- `nspin = 2`\n- `starting_magnetization(1) = 0.5`",
+    "nonmag_insulator": "### Insulator / Semiconductor\n\nStandard non-magnetic systems with a clear band gap (e.g., Silicon for 3D bulk, h-BN for 2D monolayer).\n\n*Occupations are fixed to the lowest energy levels (no smearing needed).* ",
+    "nonmag_metal": "### Metal / Semimetal\n\nSystems with zero band gap or overlapping bands at the Fermi level (e.g., Aluminum for 3D, Graphene for 2D Dirac semimetal). To achieve SCF convergence, fractional electron occupancies (smearing) are required.\n\n*Parameters Injected:*\n- `occupations = 'smearing'`\n- `smearing = 'mv'` (Marzari-Vanderbilt cold smearing)\n- `degauss = 0.02` (in Ry, ~0.27 eV)",
+    "mag_insulator": "### Magnetic Insulator (AFM / Mott-Hubbard)\n\nMagnetic systems with a band gap (e.g., Antiferromagnetic NiO). Requires spin-polarized calculations (`nspin = 2`) and DFT+U (Hubbard U) to open a Mott gap. For AFM, magnetic atoms are split into 2 species with opposite starting magnetizations.\n\n*Parameters Injected:*\n- `nspin = 2`\n- `starting_magnetization(1) = 0.5`\n- `starting_magnetization(2) = -0.5`\n- `lda_plus_u = .true.`\n- `Hubbard_U(1) = 4.6`\n- `Hubbard_U(2) = 4.6`",
+    "mag_metal": "### Magnetic Metal\n\nFerromagnetic or magnetic metallic systems (e.g., Fe, Ni, Co). Requires both smearing (fractional occupancies) and spin-polarization (`nspin = 2`).\n\n*Parameters Injected:*\n- `occupations = 'smearing'`\n- `smearing = 'mv'`\n- `degauss = 0.02` (in Ry, ~0.27 eV)\n- `nspin = 2`\n- `starting_magnetization(1) = 0.5`",
     "blank": "### Leave Blank\n\n*\"I know what I'm doing.\"*\n\nLeaves the template completely clean without any automatic electronic parameter injections."
 }
 
 DIMENSIONALITY_LEARN = {
     "bulk_3d": "### 3D Bulk Crystal (Standard)\n\nStandard periodic boundary conditions in x, y, and z directions.\n\n*No special dimensionality parameters injected.*",
     "layered_3d": "### 3D Layered Bulk\n\nBulk materials consisting of stacked 2D layers (e.g., Graphite, Bulk MoS2). Standard DFT fails to bind them, so van der Waals corrections are required.\n\n*Parameters Injected:*\n- `vdw_corr = 'dft-d3'`",
-    "monolayer_2d": "### 2D Monolayer\n\nA single isolated layer. Requires a vacuum gap in the z-direction to prevent interaction with its periodic image.\n\n*Parameters Injected:*\n- `assume_isolated = '2D'`\n*(Note: You must set a large celldm(3) for the vacuum gap)*",
-    "multilayer_2d": "### 2D Multi-layer (Bilayer, etc)\n\nMultiple isolated layers (e.g., Bilayer Graphene). Requires a vacuum gap in z-direction AND van der Waals corrections to bind the layers.\n\n*Parameters Injected:*\n- `assume_isolated = '2D'`\n- `vdw_corr = 'dft-d3'`\n*(Note: You must set a large celldm(3) for the vacuum gap)*",
+    "monolayer_2d": "### 2D Monolayer\n\nA single isolated layer. Requires a vacuum gap in the z-direction to prevent interaction with its periodic image.\n\n*Parameters Injected:*\n- `assume_isolated = '2D'`\n*(Note: For ibrav=0, set a large z-length in CELL_PARAMETERS, e.g. 15-20 Å, to provide vacuum)*",
+    "multilayer_2d": "### 2D Multi-layer (Bilayer, etc)\n\nMultiple isolated layers (e.g., Bilayer Graphene). Requires a vacuum gap in z-direction AND van der Waals corrections to bind the layers.\n\n*Parameters Injected:*\n- `assume_isolated = '2D'`\n- `vdw_corr = 'dft-d3'`\n*(Note: For ibrav=0, set a large z-length in CELL_PARAMETERS, e.g. 15-20 Å, to provide vacuum)*",
     "blank": "### Leave Blank\n\n*\"I know what I'm doing.\"*\n\nLeaves the template completely clean."
 }
 
@@ -27,7 +27,9 @@ PRESETS = {
         "ibrav": "0",
         "nat": "2",
         "ntyp": "1",
-        "atomic_species": "C 12.0107 C.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "ecutwfc": "50.0",
+        "ecutrho": "400.0",
+        "atomic_species": ["C 12.0107 C.pbe-n-kjpaw_psl.1.0.0.UPF"],
         "cell_parameters": [
             "2.4595000000 0.0000000000 0.0000000000",
             "-1.2297500000 2.1300000000 0.0000000000",
@@ -39,12 +41,36 @@ PRESETS = {
         ],
         "kpoints": "12 12 1 0 0 0"
     },
+    "hbn": {
+        "prefix": "hbn",
+        "ibrav": "0",
+        "nat": "2",
+        "ntyp": "2",
+        "ecutwfc": "60.0",
+        "ecutrho": "480.0",
+        "atomic_species": [
+            "B 10.811 B.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "N 14.007 N.pbe-n-kjpaw_psl.1.0.0.UPF"
+        ],
+        "cell_parameters": [
+            "2.5040000000 0.0000000000 0.0000000000",
+            "-1.2520000000 2.1685285334 0.0000000000",
+            "0.0000000000 0.0000000000 20.0000000000"
+        ],
+        "atomic_positions": [
+            "B 0.0000000000 0.0000000000 0.0000000000",
+            "N 0.3333333333 0.6666666667 0.0000000000"
+        ],
+        "kpoints": "12 12 1 0 0 0"
+    },
     "silicon": {
         "prefix": "silicon",
         "ibrav": "0",
         "nat": "2",
         "ntyp": "1",
-        "atomic_species": "Si 28.086 Si.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "ecutwfc": "40.0",
+        "ecutrho": "320.0",
+        "atomic_species": ["Si 28.086 Si.pbe-n-kjpaw_psl.1.0.0.UPF"],
         "cell_parameters": [
             "0.0000000000 2.7150000000 2.7150000000",
             "2.7150000000 0.0000000000 2.7150000000",
@@ -61,7 +87,9 @@ PRESETS = {
         "ibrav": "0",
         "nat": "1",
         "ntyp": "1",
-        "atomic_species": "Al 26.98 Al.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "ecutwfc": "40.0",
+        "ecutrho": "320.0",
+        "atomic_species": ["Al 26.98 Al.pbe-n-kjpaw_psl.1.0.0.UPF"],
         "cell_parameters": [
             "0.0000000000 2.0250000000 2.0250000000",
             "2.0250000000 0.0000000000 2.0250000000",
@@ -77,16 +105,131 @@ PRESETS = {
         "ibrav": "0",
         "nat": "1",
         "ntyp": "1",
-        "atomic_species": "Fe 55.845 Fe.pbe-spn-kjpaw_psl.1.0.0.UPF",
+        "ecutwfc": "80.0",
+        "ecutrho": "640.0",
+        "atomic_species": ["Fe 55.845 Fe.pbe-spn-kjpaw_psl.1.0.0.UPF"],
         "cell_parameters": [
-            "1.433 1.433 1.433",
             "-1.4330000000 1.4330000000 1.4330000000",
-            "-1.433 -1.433 1.433"
+            "1.4330000000 -1.4330000000 1.4330000000",
+            "1.4330000000 1.4330000000 -1.4330000000"
         ],
         "atomic_positions": [
             "Fe 0.0000000000 0.0000000000 0.0000000000"
         ],
         "kpoints": "8 8 8 0 0 0"
+    },
+    "nio": {
+        "prefix": "nio",
+        "ibrav": "0",
+        "nat": "4",
+        "ntyp": "3",
+        "ecutwfc": "60.0",
+        "ecutrho": "480.0",
+        "atomic_species": [
+            "Ni1 58.693 Ni.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "Ni2 58.693 Ni.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "O   15.999 O.pbe-n-kjpaw_psl.1.0.0.UPF"
+        ],
+        "cell_parameters": [
+            "2.0850000000 2.0850000000 4.1700000000",
+            "2.0850000000 4.1700000000 2.0850000000",
+            "4.1700000000 2.0850000000 2.0850000000"
+        ],
+        "atomic_positions": [
+            "Ni1 0.0000000000 0.0000000000 0.0000000000",
+            "Ni2 0.5000000000 0.5000000000 0.5000000000",
+            "O   0.2500000000 0.2500000000 0.2500000000",
+            "O   0.7500000000 0.7500000000 0.7500000000"
+        ],
+        "kpoints": "4 4 4 0 0 0"
+    },
+    "graphite": {
+        "prefix": "graphite",
+        "ibrav": "0",
+        "nat": "4",
+        "ntyp": "1",
+        "ecutwfc": "50.0",
+        "ecutrho": "400.0",
+        "atomic_species": ["C 12.0107 C.pbe-n-kjpaw_psl.1.0.0.UPF"],
+        "cell_parameters": [
+            "2.4640000000 0.0000000000 0.0000000000",
+            "-1.2320000000 2.1338865949 0.0000000000",
+            "0.0000000000 0.0000000000 6.7110000000"
+        ],
+        "atomic_positions": [
+            "C 0.0000000000 0.0000000000 0.2500000000",
+            "C 0.0000000000 0.0000000000 0.7500000000",
+            "C 0.3333333333 0.6666666667 0.2500000000",
+            "C 0.6666666667 0.3333333333 0.7500000000"
+        ],
+        "kpoints": "12 12 4 0 0 0"
+    },
+    "hbn_bulk": {
+        "prefix": "hbn_bulk",
+        "ibrav": "0",
+        "nat": "4",
+        "ntyp": "2",
+        "ecutwfc": "60.0",
+        "ecutrho": "480.0",
+        "atomic_species": [
+            "B 10.811 B.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "N 14.007 N.pbe-n-kjpaw_psl.1.0.0.UPF"
+        ],
+        "cell_parameters": [
+            "2.5040000000 0.0000000000 0.0000000000",
+            "-1.2520000000 2.1685276111 0.0000000000",
+            "0.0000000000 0.0000000000 6.6600000000"
+        ],
+        "atomic_positions": [
+            "B 0.0000000000 0.0000000000 0.2500000000",
+            "B 0.0000000000 0.0000000000 0.7500000000",
+            "N 0.3333333333 0.6666666667 0.2500000000",
+            "N 0.6666666667 0.3333333333 0.7500000000"
+        ],
+        "kpoints": "12 12 4 0 0 0"
+    },
+    "fe_monolayer": {
+        "prefix": "fe_monolayer",
+        "ibrav": "0",
+        "nat": "1",
+        "ntyp": "1",
+        "ecutwfc": "80.0",
+        "ecutrho": "640.0",
+        "atomic_species": ["Fe 55.845 Fe.pbe-spn-kjpaw_psl.1.0.0.UPF"],
+        "cell_parameters": [
+            "2.8660000000 0.0000000000 0.0000000000",
+            "0.0000000000 2.8660000000 0.0000000000",
+            "0.0000000000 0.0000000000 20.0000000000"
+        ],
+        "atomic_positions": [
+            "Fe 0.0000000000 0.0000000000 0.0000000000"
+        ],
+        "kpoints": "12 12 1 0 0 0"
+    },
+    "nio_2d": {
+        "prefix": "nio_2d",
+        "ibrav": "0",
+        "nat": "4",
+        "ntyp": "3",
+        "ecutwfc": "60.0",
+        "ecutrho": "480.0",
+        "atomic_species": [
+            "Ni1 58.693 Ni.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "Ni2 58.693 Ni.pbe-n-kjpaw_psl.1.0.0.UPF",
+            "O   15.999 O.pbe-n-kjpaw_psl.1.0.0.UPF"
+        ],
+        "cell_parameters": [
+            "2.9530000000 0.0000000000 0.0000000000",
+            "-1.4765000000 2.5573727974 0.0000000000",
+            "0.0000000000 0.0000000000 20.0000000000"
+        ],
+        "atomic_positions": [
+            "Ni1 0.0000000000 0.0000000000 0.5000000000",
+            "Ni2 0.3333333333 0.6666666667 0.5000000000",
+            "O   0.6666666667 0.3333333333 0.4400000000",
+            "O   0.0000000000 0.0000000000 0.5600000000"
+        ],
+        "kpoints": "12 12 1 0 0 0"
     }
 }
 
@@ -209,14 +352,29 @@ class DimensionalityScreen(Screen):
         preset_to_load = None
         if elec != "blank" or dim != "blank":
             if elec == "nonmag_insulator":
-                preset_to_load = "silicon" # default for insulators
+                if dim in ["monolayer_2d", "multilayer_2d"]:
+                    preset_to_load = "hbn"
+                elif dim == "layered_3d":
+                    preset_to_load = "hbn_bulk"
+                else:
+                    preset_to_load = "silicon"
             elif elec == "nonmag_metal":
                 if dim in ["monolayer_2d", "multilayer_2d"]:
                     preset_to_load = "graphene"
+                elif dim == "layered_3d":
+                    preset_to_load = "graphite"
                 else:
                     preset_to_load = "aluminum"
-            elif elec in ["mag_insulator", "mag_metal"]:
-                preset_to_load = "iron"
+            elif elec == "mag_insulator":
+                if dim in ["monolayer_2d", "multilayer_2d"]:
+                    preset_to_load = "nio_2d"
+                else:
+                    preset_to_load = "nio"
+            elif elec == "mag_metal":
+                if dim in ["monolayer_2d", "multilayer_2d"]:
+                    preset_to_load = "fe_monolayer"
+                else:
+                    preset_to_load = "iron"
 
         # 2. Apply preset values to template
         if preset_to_load:
@@ -226,8 +384,8 @@ class DimensionalityScreen(Screen):
                     if isinstance(preset[line["key"]], str):
                         line["value"] = preset[line["key"]]
             
-            # Handle multiline fields (atomic_positions, cell_parameters)
-            for list_key in ["atomic_positions", "cell_parameters"]:
+            # Handle multiline fields (atomic_positions, cell_parameters, atomic_species)
+            for list_key in ["atomic_positions", "cell_parameters", "atomic_species"]:
                 pos_idx = -1
                 for i, line in enumerate(template):
                     if line.get("key") == list_key:
@@ -263,9 +421,17 @@ class DimensionalityScreen(Screen):
             insert_field_quote("smearing", "  smearing = ", "mv")
             insert_field("degauss", "  degauss = ", "0.02")
         
-        if elec in ["mag_insulator", "mag_metal"]:
+        if elec == "mag_metal":
             insert_field("nspin", "  nspin = ", "2")
-            insert_field("starting_magnetization1", "  starting_magnetization(1) = ", "0.5")
+            insert_field("starting_magnetization(1)", "  starting_magnetization(1) = ", "0.5")
+
+        if elec == "mag_insulator":
+            insert_field("nspin", "  nspin = ", "2")
+            insert_field("starting_magnetization(1)", "  starting_magnetization(1) = ", "0.5")
+            insert_field("starting_magnetization(2)", "  starting_magnetization(2) = ", "-0.5")
+            insert_field("lda_plus_u", "  lda_plus_u = ", ".true.")
+            insert_field("Hubbard_U(1)", "  Hubbard_U(1) = ", "4.6")
+            insert_field("Hubbard_U(2)", "  Hubbard_U(2) = ", "4.6")
 
         if dim in ["monolayer_2d", "multilayer_2d"]:
             insert_field_quote("assume_isolated", "  assume_isolated = ", "2D")
@@ -280,9 +446,11 @@ class DimensionalityScreen(Screen):
                     parts = line["value"].split()
                     if len(parts) >= 3:
                         parts[2] = "1"
-                        line["value"] = " ".join(parts)
+                    if len(parts) >= 6:
+                        parts[5] = "0"
+                    line["value"] = " ".join(parts)
             
-        # 4. Inject Workflow specific changes
+        # 5. Inject Workflow specific changes
         workflow = getattr(self.app, 'workflow', 'scf')
         if workflow == "relax":
             # Change calculation to a field
@@ -313,8 +481,10 @@ class DimensionalityScreen(Screen):
                     {"type": "static", "key": "slash", "text": "/"},
                     {"type": "static", "key": "empty", "text": ""},
                     {"type": "static", "key": "cell_block", "text": "&CELL"},
-                    {"type": "static", "key": "slash", "text": "/"}
                 ]
+                if dim in ["monolayer_2d", "multilayer_2d"]:
+                    ions_cell_blocks.append({"type": "field", "key": "cell_dofree", "label": "  cell_dofree = ", "value": "2Dxy", "quote": True, "suffix": ","})
+                ions_cell_blocks.append({"type": "static", "key": "slash", "text": "/"})
                 template[electrons_slash_idx+1:electrons_slash_idx+1] = ions_cell_blocks
 
         self.app.push_screen(SystemSetupScreen(template=template))
